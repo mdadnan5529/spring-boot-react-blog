@@ -1,14 +1,14 @@
-package me.ktkim.blog.service;
+package me.ktkim.blog.service.impl;
 
 import me.ktkim.blog.common.Exception.ApiException;
 import me.ktkim.blog.common.util.AuthProvider;
+import me.ktkim.blog.common.util.AuthoritiesConstants;
 import me.ktkim.blog.model.domain.Authority;
 import me.ktkim.blog.model.domain.User;
 import me.ktkim.blog.model.dto.UserDto;
 import me.ktkim.blog.repository.AuthorityRepository;
 import me.ktkim.blog.repository.UserRepository;
-import me.ktkim.blog.common.util.AuthoritiesConstants;
-import me.ktkim.blog.security.SecurityUtil;
+import me.ktkim.blog.service.UserServiceimpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,24 +25,24 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * @author Kim Keumtae
- */
 @Service
 @Transactional
-public class UserService {
+public class UserServiceimplImpl implements UserServiceimpl {
 
-    private Logger log = LoggerFactory.getLogger(getClass());
-
-    @Autowired
-    private UserRepository userRepository;
+    public Logger log = LoggerFactory.getLogger(getClass());
 
     @Autowired
-    private AuthorityRepository authorityRepository;
+    public UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AuthorityRepository authorityRepository;
 
+    @Autowired
+    public PasswordEncoder passwordEncoder;
+
+
+
+    @Override
     public User registerAccount(UserDto.Create userDto) {
         userRepository.findByEmail(userDto.getEmail())
                 .ifPresent(user -> {
@@ -53,6 +53,7 @@ public class UserService {
         return user;
     }
 
+    @Override
     public User createUser(String email, String password, String userName) {
         User newUser = new User();
         Optional<Authority> authority = authorityRepository.findById(AuthoritiesConstants.USER);
@@ -68,6 +69,7 @@ public class UserService {
         return newUser;
     }
 
+    @Override
     public void updateUser(Long id, String email, String name, boolean activated) {
         userRepository.findOneById(id).ifPresent(user -> {
             user.setEmail(email);
@@ -75,18 +77,23 @@ public class UserService {
         });
     }
 
+    @Override
     public Page<User> findAllUser(Pageable pageable) {
         Page<User> users = userRepository.findAll(pageable);
         return users;
     }
 
+    @Override
     public List<String> getAuthorities() {
         return authorityRepository.findAll().stream().map(Authority::getName).collect(Collectors.toList());
     }
 
+    @Override
     public void deleteUser(Long userId) {
         userRepository.findOneById(userId).ifPresent(user -> {
             userRepository.deleteById(userId);
         });
     }
+
+
 }

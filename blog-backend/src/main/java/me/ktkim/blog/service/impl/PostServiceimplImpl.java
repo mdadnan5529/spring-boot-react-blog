@@ -1,12 +1,13 @@
-package me.ktkim.blog.service;
+package me.ktkim.blog.service.impl;
 
 import me.ktkim.blog.common.Exception.BadRequestException;
 import me.ktkim.blog.model.domain.Post;
-import me.ktkim.blog.model.dto.PostDto;
 import me.ktkim.blog.model.domain.User;
+import me.ktkim.blog.model.dto.PostDto;
 import me.ktkim.blog.repository.PostRepository;
 import me.ktkim.blog.security.SecurityUtil;
 import me.ktkim.blog.security.service.CustomUserDetails;
+import me.ktkim.blog.service.PostServiceimpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,20 +17,27 @@ import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-/**
- * @author Kim Keumtae
- */
 @Service
 @Transactional
-public class PostService {
+public class PostServiceimplImpl implements PostServiceimpl {
+
 
     @Autowired
     private PostRepository postRepository;
 
+    public PostRepository getPostRepository() {
+        return postRepository;
+    }
+
+    public void setPostRepository(PostRepository postRepository) {
+        this.postRepository = postRepository;
+    }
+    @Override
     public Optional<Post> findForId(Long id) {
         return postRepository.findById(id);
     }
 
+    @Override
     public PostDto registerPost(PostDto postDto, CustomUserDetails customUserDetails) {
         Post newPost = new Post();
         newPost.setTitle(postDto.getTitle());
@@ -39,7 +47,7 @@ public class PostService {
         newPost.setUser(new User(customUserDetails.getId())); // temporary code
         return new PostDto(postRepository.saveAndFlush(newPost));
     }
-
+    @Override
     public Optional<PostDto> editPost(PostDto editPostDto) {
         return this.findForId(editPostDto.getId())
                 .map(p -> {
@@ -53,14 +61,17 @@ public class PostService {
                 .map(PostDto::new);
     }
 
+    @Override
     public Page<Post> findByUserOrderedByCreatedDatePageable(User user, Pageable pageable) {
         return postRepository.findByUserOrderByCreatedDateDesc(user, pageable);
     }
 
+    @Override
     public Page<Post> findAllByOrderByCreatedDateDescPageable(Pageable pageable) {
         return postRepository.findAllByOrderByCreatedDateDesc(pageable);
     }
 
+    @Override
     public void deletePost(Long id) {
         postRepository.findById(id).ifPresent(p -> {
             if (p.getUser().getId() != SecurityUtil.getCurrentUserLogin().get().getId()) {

@@ -4,7 +4,7 @@ import me.ktkim.blog.model.domain.Comment;
 import me.ktkim.blog.model.dto.CommentDto;
 import me.ktkim.blog.security.CurrentUser;
 import me.ktkim.blog.security.service.CustomUserDetails;
-import me.ktkim.blog.service.CommentService;
+import me.ktkim.blog.service.CommentServiceimpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,13 +26,18 @@ public class CommentController {
     private final Logger log = LoggerFactory.getLogger(CommentController.class);
 
     @Autowired
-    private CommentService commentService;
+    private CommentServiceimpl commentServiceimpl;
+
+    @Autowired
+    public CommentController(CommentServiceimpl commentServiceimpl){
+        this.commentServiceimpl = commentServiceimpl;
+    }
 
     @GetMapping(value = "/comments/posts/{postId}")
     public ResponseEntity<List<CommentDto>> getComments(@PathVariable Long postId) {
         log.debug("REST request to getComments : {}", postId);
 
-        Optional<List<Comment>> comments = commentService.findCommentsByPostId(postId);
+        Optional<List<Comment>> comments = commentServiceimpl.findCommentsByPostId(postId);
         if (!comments.isPresent()) {
             return ResponseEntity.noContent().build();
         } else {
@@ -48,7 +53,7 @@ public class CommentController {
     public ResponseEntity<CommentDto> saveComment(@RequestBody CommentDto commentDto,
                                                   @CurrentUser CustomUserDetails customUserDetails) {
         log.debug("REST request to saveComment : {}", commentDto.getUserName());
-        CommentDto returnComment = commentService.registerComment(commentDto, customUserDetails);
+        CommentDto returnComment = commentServiceimpl.registerComment(commentDto, customUserDetails);
         return new ResponseEntity<CommentDto>(returnComment, HttpStatus.CREATED);
     }
 }

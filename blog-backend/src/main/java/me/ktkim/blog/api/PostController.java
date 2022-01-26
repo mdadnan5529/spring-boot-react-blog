@@ -5,7 +5,7 @@ import me.ktkim.blog.model.domain.Post;
 import me.ktkim.blog.model.dto.PostDto;
 import me.ktkim.blog.security.CurrentUser;
 import me.ktkim.blog.security.service.CustomUserDetails;
-import me.ktkim.blog.service.PostService;
+import me.ktkim.blog.service.PostServiceimpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,19 +29,24 @@ public class PostController {
     private final Logger log = LoggerFactory.getLogger(PostController.class);
 
     @Autowired
-    private PostService postService;
+    private PostServiceimpl postServiceimpl;
+
+    @Autowired
+    public PostController(PostServiceimpl postServiceimpl){
+        this.postServiceimpl = postServiceimpl;
+    }
 
     @GetMapping(value = "/posts/{id}")
     public ResponseEntity<PostDto> getPost(@PathVariable Long id) {
         log.debug("REST request to get Post : {}", id);
-        Post post = postService.findForId(id).orElseThrow(() -> new ApiException("Post does not exist", HttpStatus.NOT_FOUND));
+        Post post = postServiceimpl.findForId(id).orElseThrow(() -> new ApiException("Post does not exist", HttpStatus.NOT_FOUND));
         return new ResponseEntity<>(new PostDto(post), HttpStatus.OK);
     }
 
     @GetMapping(value = "/posts")
     public ResponseEntity<List<PostDto>> getPostList(Pageable pageable) {
         log.debug("REST request to get Posts : {}", pageable);
-        Page<Post> posts = postService.findAllByOrderByCreatedDateDescPageable(pageable);
+        Page<Post> posts = postServiceimpl.findAllByOrderByCreatedDateDescPageable(pageable);
         Page<PostDto> postDto = posts.map(post -> new PostDto((post)));
         return new ResponseEntity<>(postDto.getContent(), HttpStatus.OK);
     }
@@ -53,7 +58,7 @@ public class PostController {
         if (postDto.getId() != null) {
             throw new ApiException("A new post cannot already have an ID", HttpStatus.CONFLICT);
         } else {
-            PostDto returnPost = postService.registerPost(postDto, customUserDetails);
+            PostDto returnPost = postServiceimpl.registerPost(postDto, customUserDetails);
             return new ResponseEntity<PostDto>(returnPost, HttpStatus.CREATED);
         }
     }
@@ -62,11 +67,11 @@ public class PostController {
     public ResponseEntity<PostDto> editPost(@PathVariable Long id,
                                             @RequestBody PostDto postDto) {
         log.debug("REST request to edit Post : {}", postDto);
-        Optional<Post> post = postService.findForId(id);
+        Optional<Post> post = postServiceimpl.findForId(id);
         if (!post.isPresent()) {
             throw new ApiException("Post could not be found", HttpStatus.NOT_FOUND);
         }
-        Optional<PostDto> returnPost = postService.editPost(postDto);
+        Optional<PostDto> returnPost = postServiceimpl.editPost(postDto);
         return returnPost.map(response -> {
             return new ResponseEntity<PostDto>(response, HttpStatus.OK);
         }).orElse(new ResponseEntity(HttpStatus.NOT_FOUND));
@@ -78,7 +83,7 @@ public class PostController {
         if (id == null) {
             throw new ApiException("Post id cannot null", HttpStatus.NOT_FOUND);
         } else {
-            postService.deletePost(id);
+            postServiceimpl.deletePost(id);
             return new ResponseEntity<>(HttpStatus.OK);
         }
     }
